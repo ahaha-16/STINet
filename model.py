@@ -1,7 +1,3 @@
-#  Change Guiding Network: Incorporating Change Prior to Guide Change Detection in Remote Sensing Imagery,
-#  IEEE J. SEL. TOP. APPL. EARTH OBS. REMOTE SENS., PP. 1–17, 2023, DOI: 10.1109/JSTARS.2023.3310208. C. HAN, C. WU, H. GUO, M. HU, J.Li AND H. CHEN,
-
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -17,10 +13,10 @@ class ChannelExchange(BaseModule):
         super(ChannelExchange, self).__init__()
         self.p = p
     def forward(self, x1, x2):
-        N, c, h, w = x1.shape   #读取矩阵长度
+        N, c, h, w = x1.shape 
 
-        exchange_map = torch.arange(c) % self.p == 0   #从0-c选取要交换的图
-        exchange_mask = exchange_map.unsqueeze(0).expand((N, -1))  #取出来并
+        exchange_map = torch.arange(c) % self.p == 0   
+        exchange_mask = exchange_map.unsqueeze(0).expand((N, -1)) 
 
         out_x1, out_x2 = torch.zeros_like(x1), torch.zeros_like(x2)
         out_x1[~exchange_mask, ...] = x1[~exchange_mask, ...]
@@ -176,7 +172,7 @@ def createPDCFunc(PDC_type):  # 创建像素差卷积函数
             #     buffer = torch.cuda.FloatTensor(shape[0], shape[1], 3 * 1).fill_(0)
             # else:
             #     buffer = torch.zeros(shape[0], shape[1], 3 * 1)
-            weights = weights.view(shape[0], shape[1], -1)  # 对于一个卷积核,拉成一条直线,方便索引
+            weights = weights.view(shape[0], shape[1], -1)  
             buffer = weights.clone()
             # print(buffer)
             # buffer = weights
@@ -208,7 +204,7 @@ def createPDCFunc(PDC_type):  # 创建像素差卷积函数
             #     buffer = torch.cuda.FloatTensor(shape[0], shape[1], 3 * 1).fill_(0)
             # else:
             #     buffer = torch.zeros(shape[0], shape[1], 3 * 1)
-            weights = weights.view(shape[0], shape[1], -1)  # 对于一个卷积核,拉成一条直线,方便索引
+            weights = weights.view(shape[0], shape[1], -1) 
             buffer = weights.clone()
             # print(buffer)
             # buffer = weights
@@ -249,7 +245,7 @@ def createPDCFunc(PDC_type):  # 创建像素差卷积函数
 
             #     buffer = torch.zeros(shape[0], shape[1], 3 * 1)
 
-            weights = weights.view(shape[0], shape[1], -1)  # 对于一个卷积核,拉成一条直线,方便索引
+            weights = weights.view(shape[0], shape[1], -1)  
 
             buffer = weights.clone()
 
@@ -324,7 +320,7 @@ def createPDCFunc(PDC_type):  # 创建像素差卷积函数
 
             #     buffer = torch.zeros(shape[0], shape[1], 3 * 1)
 
-            weights = weights.view(shape[0], shape[1], -1)  # 对于一个卷积核,拉成一条直线,方便索引
+            weights = weights.view(shape[0], shape[1], -1)  
 
             buffer = weights.clone()
 
@@ -397,7 +393,7 @@ def createPDCFunc(PDC_type):  # 创建像素差卷积函数
 
             #     buffer = torch.zeros(shape[0], shape[1], 3 * 1)
 
-            weights = weights.view(shape[0], shape[1], -1)  # 对于一个卷积核,拉成一条直线,方便索引
+            weights = weights.view(shape[0], shape[1], -1) 
 
             buffer = weights.clone()
 
@@ -470,7 +466,7 @@ def createPDCFunc(PDC_type):  # 创建像素差卷积函数
 
             #     buffer = torch.zeros(shape[0], shape[1], 3 * 1)
 
-            weights = weights.view(shape[0], shape[1], -1)  # 对于一个卷积核,拉成一条直线,方便索引
+            weights = weights.view(shape[0], shape[1], -1)  
 
             buffer = weights.clone()
 
@@ -524,7 +520,7 @@ def createPDCFunc(PDC_type):  # 创建像素差卷积函数
 
 
     else:
-        print('unknown PDC type: %s' % str(PDC_type))  # 正常来说走不到这里
+        print('unknown PDC type: %s' % str(PDC_type))  
         return None
 
 
@@ -780,7 +776,7 @@ class BasicConv2d(nn.Module):
 
 
 
-#增加decoder解码器，不concat多尺度特征生成guide map,也concat多尺度特征生成最后输出
+
 class CGNet(nn.Module):
     def __init__(self,):
         super(CGNet, self).__init__()
@@ -794,7 +790,6 @@ class CGNet(nn.Module):
         channles = [64, 128, 256, 512, 512]
         self.bmca = BiMulCrossAttention()
 
-        # self.tffm_x2 = TemporalFeatureFusionModule4()
         self.tffm_x3 = TemporalFeatureFusionModule3(channles[2], channles[2])
         self.tffm_x4 = TemporalFeatureFusionModule2(channles[3], channles[3])
         self.tffm_x5 = TemporalFeatureFusionModule1(channles[4], channles[4])
@@ -815,19 +810,12 @@ class CGNet(nn.Module):
 
         self.decoder_final = nn.Sequential(BasicConv2d(128,64,3,1,1),nn.Conv2d(64,1,1))
 
-        # self.cgm_2 = ChangeGuideModule(256)
-        # self.cgm_3 = ChangeGuideModule(512)
-        # self.cgm_4 = ChangeGuideModule(512)
-
-        #相比v2 额外的模块
         self.upsample2x=nn.UpsamplingBilinear2d(scale_factor=2)
         self.decoder_module4 = BasicConv2d(1024,512,3,1,1)
         self.decoder_module3 = BasicConv2d(768,256,3,1,1)
         self.decoder_module2 = BasicConv2d(384,128,3,1,1)
 
-    # def forward(self, A,B=None):
-    #     if B == None:
-    #         B = A
+
     def forward(self,A,B):
 
         size = A.size()[2:]
@@ -836,8 +824,7 @@ class CGNet(nn.Module):
         layer2_A = self.down2(layer1_A)
         layer3_A = self.down3(layer2_A)
         layer4_A = self.down4(layer3_A)
-        print(layer1_A.size(), layer2_A.size(), layer3_A.size(), layer4_A.size())
-
+        
         layer1_pre = self.inc(B)
         layer1_B = self.down1(layer1_pre)
         layer2_B = self.down2(layer1_B)
@@ -846,11 +833,7 @@ class CGNet(nn.Module):
 
         s1_2, s1_3, s1_4, s1_5 = self.bmca(layer1_A, layer1_B, layer2_A, layer2_B, layer3_A, layer3_B, layer4_A, layer4_B)
         s2_2, s2_3, s2_4, s2_5 = self.bmca(layer1_B, layer1_A, layer2_B, layer2_A, layer3_B, layer3_A, layer4_B, layer4_A)
-        # layer4_s = torch.cat((layer4_B, layer4_A), dim=1)
-        # layer4_s = self.conv_reduce_4(layer4_s)
-
-        # layer1, layer2, layer3, layer4 = self.tfm(layer1_A, layer2_A, layer3_A, layer4_A, layer1_B, layer2_B, layer3_B, layer4_B)
-
+        
         layer1 = torch.cat((s1_2, s2_2),dim=1)
 
         layer2 = torch.cat((s1_3, s2_3),dim=1)
@@ -864,35 +847,10 @@ class CGNet(nn.Module):
         layer3 = self.conv_reduce_3(layer3)
         layer4 = self.conv_reduce_4(layer4)
 
-        # # layer4 = self.up_layer4(layer4)
-        # #
-        # # layer3 = self.up_layer3(layer3)
-        # #
-        # # layer2 = self.up_layer2(layer2)
-
         layer4_1 = F.interpolate(layer4, layer1.size()[2:], mode='bilinear', align_corners=True)
         feature_fuse=layer4_1 #需要注释！
 
-
-        # layer4_1 = F.interpolate(layer4, layer1.size()[2:], mode='bilinear', align_corners=True)
-        # layer3_1 = F.interpolate(layer3, layer1.size()[2:], mode='bilinear', align_corners=True)
-        # layer2_1 = F.interpolate(layer2, layer1.size()[2:], mode='bilinear', align_corners=True)
-        # feature_fuse = torch.cat((layer1,layer2_1,layer3_1,layer4_1),dim=1)
-
         change_map = self.decoder(feature_fuse) #需要注释！
-
-        # ---------------注释这两句------------------------
-        # if not self.training:
-        #     feature_fuse = layer4_1
-        #     feature_fuse = feature_fuse.cpu().detach().numpy()
-        #     for num in range(0, 511):
-        #         display = feature_fuse[0, num, :, :]  # 第几张影像，第几层特征0-511
-        #         plt.figure()
-        #         plt.imshow(display)  # [B, C, H,W]
-        #         plt.savefig('./test_result/feature_fuse-v6-LEVIR1419/' + 'v6-fuse-' + str(num) + '.png')
-        # # change_map = self.decoder(torch.cat((layer1, layer2_1, layer3_1, layer4_1), dim=1))
-        # change_map = self.decoder(feature_fuse)
-        # ---------------注释这两句------------------------
 
         layer4 = self.tffm_x5(layer4, change_map)
         first_map = self.decoder_first(layer4)
@@ -916,27 +874,6 @@ class CGNet(nn.Module):
         return change_map, first_map, second_map, third_map, final_map
 
 
-
-if __name__=='__main__':
-    #测试热图
-    # net=CGNet().cuda()
-    # out=net(torch.rand((2,3,256,256)).cuda(),torch.rand((2,3,256,256)).cuda())
-
-    #测试模型大小
-    print('Hi~')
-    input_size = 256
-    model_restoration = HCGMNet()
-    # model_restoration = CGNet()
-    from ptflops import get_model_complexity_info
-    from torchstat import stat
-
-    # input = torch.rand((3, input_size, input_size))
-    # output = model_restoration(input)
-    macs, params = get_model_complexity_info(model_restoration, (3, input_size, input_size), as_strings=True,
-                                             print_per_layer_stat=True, verbose=True)
-    stat(model_restoration, (3, input_size, input_size))
-    print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
-    print('{:<30}  {:<8}'.format('Number of parameters: ', params))
 
 
 
